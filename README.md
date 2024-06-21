@@ -1,2 +1,1 @@
-# Django-AQI-Diseases-Map
- 
+# graduationProject

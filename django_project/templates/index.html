@@ -1,0 +1,632 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap"
+    />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graduation Project</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"
+    />
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+      * {
+        font-family: "Poppins", sans-serif;
+      }
+      .navbar {
+        background-color: #101d29;
+        height: 50px;
+        z-index: 1002;
+      }
+      .navbar-brand {
+        color: #ffffff;
+        font-weight: bold;
+      }
+      .navbar-nav .nav-item .nav-link {
+        color: #fff;
+        position: relative;
+        transition: 0.3s;
+        font-weight: 400;
+        color: #fff;
+      }
+      .navbar-nav .nav-item .nav-link::before {
+        content: "";
+        position: fixed;
+        width: 0%;
+        height: 2px;
+        bottom: 0;
+        left: 0;
+        background-color: #666;
+        transition: 0.3s;
+        color: #fff;
+      }
+      .navbar-nav .nav-item .nav-link::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background-color: #fff; /* Çizgi rengi */
+        transition: width 0.3s ease; /* Geçiş efekti */
+      }
+      .navbar-nav .nav-item .nav-link:hover::after {
+        width: 100%;
+      }
+      .navbar-nav .nav-item .nav-link:hover::before {
+        width: 100%;
+        color: #fff;
+      }
+      .menu li a {
+        text-decoration: none;
+        color: #000;
+      }
+      .menu li a:visited {
+        color: #000;
+      }
+      #container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #map {
+        padding-top: 56px;
+        height: 100%;
+        width: 100%;
+      }
+      .rating {
+        border: 1px #999 solid;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(
+          to right,
+          #28b463,
+          #ffe740,
+          #dc8239,
+          #dc143c,
+          #9a234d,
+          #892239
+        );
+        border-radius: 30px; /* Köşeleri oval yapar */
+        z-index: 1000; /* Yüksek bir z-index değeri ekleyerek en üstte kalmasını sağlayabiliriz */
+        width: 850px; /* İstenilen genişliği ayarlayabilirsiniz */
+        height: 50px; /* İstenilen yüksekliği ayarlayabilirsiniz */
+        font-weight: bold;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+      .rating input {
+        display: none;
+      }
+      .rating label {
+        text-align: center;
+        font-size: 12px; /* İstenilen yazı boyutunu ayarlayabilirsiniz */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      #overlayDiv {
+        position: fixed;
+        top: 50px;
+        right: 0;
+        width: 71%;
+        height: 100%;
+        background-color: #101d29;
+        z-index: 2000; /* Daha yüksek z-index değeri */
+        display: none;
+        overflow: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-md navbar-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand mr-auto" href="#">
+          <img
+            src="{% static 'images/aqi.gif' %}"
+            alt="AQI Icon"
+            width="30"
+            height="30"
+            class="d-inline-block align-text-top"
+          />
+          Air Quality Index
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#collapsibleNavbar"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div
+          class="collapse navbar-collapse justify-content-end"
+          id="collapsibleNavbar"
+        >
+          <ul class="navbar-nav ml-auto">
+            <span class="nav-link">Years:</span>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2019">2019</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2018">2018</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2017">2017</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2016">2016</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2015">2015</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2014">2014</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2013">2013</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2012">2012</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2011">2011</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/?year=2010">2010</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div id="container">
+      <div id="map"></div>
+      <div
+        class="rating"
+        style="position: fixed; z-index: 1000; bottom: 10px; left: 10px"
+      >
+        <input type="radio" name="rating" id="rata6" /><label for="rata6"
+          >Good<br />0 - 50<br
+        /></label>
+        <input type="radio" name="rating" id="rata5" /><label for="rata5"
+          >Moderate<br />51 - 100</label
+        >
+        <input type="radio" name="rating" id="rata4" /><label for="rata4"
+          >Unhealthy for Sensitive Group<br />101 - 150</label
+        >
+        <input type="radio" name="rating" id="rata3" /><label for="rata3"
+          >Unhealthy<br />151 - 200</label
+        >
+        <input type="radio" name="rating" id="rata2" /><label for="rata2"
+          >Very Unhealthy<br />201 - 300</label
+        >
+        <input type="radio" name="rating" id="rata1" /><label for="rata1"
+          >Hazardous<br />300+</label
+        >
+      </div>
+    </div>
+    <div
+      id="overlayDiv"
+      style="
+        position: fixed;
+        top: 50px;
+        right: 0;
+        width: 71%;
+        height: 100%;
+        background-color: #101d29;
+        z-index: 2000;
+        display: none;
+        overflow: scroll;
+      "
+    >
+      <div style="padding: 20px; color: white">
+        <h2 id="countryName"></h2>
+        <div style="max-width: 1000%; justify-content: flex-end">
+          <h4 style="margin-right: 5px; text-align: center">
+            Values for Country, Region and the World between 2010 and 2019
+          </h4>
+          <div id="plot9" style="max-width: 50%; text-align: right"></div>
+          <div id="plot6" style="min-width: 100%"></div>
+        </div>
+        <div style="height: 100px"></div>
+        <div class="row" style="display: flex; justify-content: center">
+          <div style="max-width: 20%">
+            <h4 style="margin-right: 5px; text-align: center">
+              AQI data by Residential Areas
+            </h4>
+            <div id="plot2"></div>
+          </div>
+          <div style="min-width: 70%">
+            <h4 style="margin-left: 270px; text-align: center">
+              Countries with the Most Deaths Per Population
+            </h4>
+            <div id="plot5"></div>
+          </div>
+        </div>
+        <div style="height: 180px"></div>
+        <div
+          style="
+            max-width: 1000%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          "
+        >
+          <h4 style="margin-right: 5px; text-align: center">
+            Percentage of Cause-Specific Deaths out of Total Deaths and Average
+            Data for the Region
+          </h4>
+          <div
+            class="row"
+            style="display: flex; justify-content: space-between; width: 100%"
+          >
+            <div style="max-width: 50%">
+              <h7 style="text-align: left">
+                <br />
+                <br />
+                <br />
+                Outer Ring - Average Data for the Region<br />
+                Inner Ring - Percentage of Cause-Specific Deaths out of Total
+                Deaths
+              </h7>
+            </div>
+            <div style="max-width: 70%">
+              <div id="plot4" style="text-align: right"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 100px"></div>
+        <div class="row" style="display: flex; justify-content: center">
+          <h2 style="margin-right: 5px; color: white">
+            World Air Quality Index (AQI) in
+          </h2>
+          <h2 id="selectedYear" style="color: white"></h2>
+          <div id="plot" style="min-width: 100%; padding: 35px"></div>
+          <br />
+          <br />
+        </div>
+        <span
+          id="closeButton"
+          style="
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+          "
+          onclick="hideOverlayDiv()"
+          >&times;</span
+        >
+      </div>
+    </div>
+
+    <script>
+      var map = L.map("map").setView([18, 30], 3);
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {}).addTo(map);
+      map.zoomControl.remove();
+      var API_KEY = "7b0b2395e0a953df1afeeb7ae7626527";
+      var API_URL = "https://api.openweathermap.org/data/2.5/weather";
+      var latitude = 0;
+      var longitude = 0;
+      fetch(`${API_URL}?lat=${latitude}&lon=${longitude}&appid=${API_KEY}`)
+          .then((response) => response.json())
+          .then((data) => {
+              var temperature = data.main.temp;
+              L.tileLayer(`https://tile.openweathermap.org/map/{layer}/{z}/{x}/{y}.png?appid=${API_KEY}`, {
+                  layer: "temp_new",
+                  attribution: 'Weather data &copy; <a href="https://openweathermap.org">OpenWeatherMap</a>',
+                  opacity: 0.8,
+              }).addTo(map);
+          })
+          .catch((error) => {
+              console.log("Error:", error);
+          });
+      var countryData = {{ country_data|safe }};
+      var LeafIcon = L.Icon.extend({
+          options: {
+              iconSize: [25, 25],
+              iconAnchor: [12, 12],
+              popupAnchor: [0, -10],
+              html: "",
+              className: "custom-icon",
+          },
+          createIcon: function () {
+              var div = document.createElement("div");
+              div.className = "icon-container";
+              var icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+              icon.setAttribute("width", "25");
+              icon.setAttribute("height", "25");
+              var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+              circle.setAttribute("cx", "12");
+              circle.setAttribute("cy", "12");
+              circle.setAttribute("r", "11");
+              circle.setAttribute("fill", this.options.fillColor);
+              var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              text.setAttribute("x", "50%");
+              text.setAttribute("y", "50%");
+              text.setAttribute("dy", "0.3em");
+              text.setAttribute("text-anchor", "middle");
+              text.setAttribute("fill", "#000");
+              text.setAttribute("font-size", "10px");
+              text.textContent = Math.round(this.options.value);
+              icon.appendChild(circle);
+              icon.appendChild(text);
+              div.appendChild(icon);
+              this._setIconStyles(div, "icon");
+              return div;
+          },
+      });
+      function createCustomIcon(value) {
+          var fillColor;
+          if (value <= 50) {
+              fillColor = "rgba(116,214,0)";
+          } else if (50 < value && value < 100) {
+              fillColor = "rgba(255,226,0)";
+          } else if (100 < value && value < 150) {
+              fillColor = "rgba(255,137,0)";
+          } else if (150 < value && value < 200) {
+              fillColor = "rgba(255,0,23)";
+          } else if (200 < value && value < 300) {
+              fillColor = "rgba(125, 62, 185)";
+          } else {
+              fillColor = "rgba(120, 41, 49)";
+          }
+          return new LeafIcon({ value: value, fillColor: fillColor });
+      }
+      function createMarkerForCountry(countryObject, icon, factValueNumeric) {
+          const countryName = countryObject.name.common;
+          const countryCode = countryObject.cca3;
+          const marker = L.marker(countryObject.latlng, { icon: icon, id: countryName }).addTo(map);
+          marker.bindPopup(`<b>${countryName}</b><br>Air Quality Index: ${factValueNumeric}</b><br>Click here to view the graphs.</b>`);
+          marker.on("mouseover", (e) => {
+              fetch("/get_pie_chart", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                      country: countryCode,
+                  }),
+              })
+                  .then((response) => {
+                      if (!response.ok) {
+                          throw new Error('Server hatası');
+                      }
+                      return response.json();
+                  })
+                  .then((graphData) => {
+                    marker.bindPopup(`<b>${countryName}</b><br>Air Quality Index: ${factValueNumeric}</b><br>Click here to view the graphs.</b>`);
+
+                  })
+                  .catch((error) => {
+                      marker.bindPopup(`<b>${countryName}</b><br>Air Quality Index: ${factValueNumeric}</b><br>This country has no data.</b>`);
+                      console.log("Error fetching graph data:", error);
+                  });
+              marker.openPopup();
+          });
+          marker.on("mouseout", (e) => {
+              marker.closePopup();
+          });
+          marker.on("click", (e) => {
+              document.getElementById("countryName").innerText = countryName;
+              document.getElementById("plot").innerHTML = "";
+              document.getElementById("plot2").innerHTML = "";
+              document.getElementById("plot5").innerHTML = "";
+              document.getElementById("plot6").innerHTML = "";
+              document.getElementById("plot4").innerHTML = "";
+              document.getElementById("plot9").innerHTML = "";
+              fetch("/get_graph_data/", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                      country: countryCode,
+                  }),
+              })
+                  .then((response) => {
+                      if (!response.ok) {
+                          throw new Error('Server hatası');
+                      }
+                      return response.json();
+                  })
+                  .then((graphData) => {
+                      document.getElementById("plot").innerHTML = graphData.graph_data;
+                      evaluateScriptOnAjaxResponse(graphData.graph_data);
+                      overlayDiv.style.display = "block";
+                  })
+                  .catch((error) => {
+                      console.log("Error fetching graph data:", error);
+                  });
+                    fetch("/get_bar_chart", {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                          country: countryCode,
+                      }),
+                  })
+                      .then((response) => {
+                          if (!response.ok) {
+                              throw new Error('Server hatası');
+                          }
+                          return response.json();
+                      })
+                      .then((graphData) => {
+                          document.getElementById("plot2").innerHTML = graphData.graph_data;
+                          evaluateScriptOnAjaxResponse(graphData.graph_data);
+
+                          overlayDiv.style.display = "block";
+                      })
+                      .catch((error) => {
+                          console.log("Error fetching graph data:", error);
+                      });
+                        fetch("/get_sunburts_chart", {
+                          method: "POST",
+                          headers: {
+                              "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                              country: countryCode,
+                          }),
+                      })
+                          .then((response) => {
+                              if (!response.ok) {
+                                  throw new Error('Server hatası');
+                              }
+                              return response.json();
+                          })
+                          .then((graphData) => {
+                              document.getElementById("plot4").innerHTML = graphData.graph_data;
+                              evaluateScriptOnAjaxResponse(graphData.graph_data);
+
+                              overlayDiv.style.display = "block";
+                          })
+                          .catch((error) => {
+                              console.log("Error fetching graph data:", error);
+                          });
+                        fetch("/get_pie_chart", {
+                          method: "POST",
+                          headers: {
+                              "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                              country: countryCode,
+                          }),
+                      })
+                          .then((response) => {
+                              if (!response.ok) {
+                                  throw new Error('Server hatası');
+                              }
+                              return response.json();
+                          })
+                          .then((graphData) => {
+                              document.getElementById("plot5").innerHTML = graphData.graph_data;
+                              evaluateScriptOnAjaxResponse(graphData.graph_data);
+
+                              overlayDiv.style.display = "block";
+                          })
+                          .catch((error) => {
+                              console.log("Error fetching graph data:", error);
+                          });
+                        fetch("/get_line_chart", {
+                          method: "POST",
+                          headers: {
+                              "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                              country: countryCode,
+                          }),
+                      })
+                          .then((response) => {
+                              if (!response.ok) {
+                                  throw new Error('Server hatası');
+                              }
+                              return response.json();
+                          })
+                          .then((graphData) => {
+                              document.getElementById("plot6").innerHTML = graphData.graph_data;
+                              evaluateScriptOnAjaxResponse(graphData.graph_data);
+
+                              overlayDiv.style.display = "block";
+                          })
+                          .catch((error) => {
+                              console.log("Error fetching graph data:", error);
+                          });
+                        fetch("/get_line2_chart", {
+                          method: "POST",
+                          headers: {
+                              "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                              country: countryCode,
+                          }),
+                      })
+                          .then((response) => {
+                              if (!response.ok) {
+                                  throw new Error('Server hatası');
+                              }
+                              return response.json();
+                          })
+                          .then((graphData) => {
+                              document.getElementById("plot9").innerHTML = graphData.graph_data;
+                              evaluateScriptOnAjaxResponse(graphData.graph_data);
+
+                              overlayDiv.style.display = "block";
+                          })
+                          .catch((error) => {
+                              console.log("Error fetching graph data:", error);
+                          });
+          });
+      }
+      function evaluateScriptOnAjaxResponse(graph_data) {
+          const scriptStart = "text/javascript\">";
+          const scriptEnd = "</script";
+          let scriptCode = graph_data.split(scriptStart)[3];
+          scriptCode = scriptCode.split(scriptEnd)[0];
+          eval(scriptCode);
+      }
+      const countries = fetch("https://restcountries.com/v3.1/all")
+          .then((response) => response.json());
+      Object.keys(countryData).forEach(function (countryCode) {
+          var factValueNumeric = countryData[countryCode];
+          countries.then((data) => {
+              countryObject = data.find(country => country.cca3 === countryCode);
+              country = countryObject.name.common;
+              var icon = createCustomIcon(factValueNumeric);
+              createMarkerForCountry(countryObject, icon, factValueNumeric)
+          })
+              .catch((error) => {
+                  console.log("Error:", error);
+              });
+      });
+      function hideOverlayDiv() {
+          var overlayDiv = document.getElementById("overlayDiv");
+          overlayDiv.style.display = "none";
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      const year = urlParams.get('year') || '2019';
+      document.getElementById("selectedYear").innerText = year;
+    </script>
+  </body>
+</html>

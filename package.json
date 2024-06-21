@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "wind-js-leaflet": "^2.0.5"
+  }
+}
