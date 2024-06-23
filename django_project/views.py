@@ -15,7 +15,7 @@ dataCsv = 0
 diseasesCsv = 0
 year = 2019
 diseasesRaw = pd.read_csv(
-    "/Users/aliyildiz/Documents/development/django/graduationProject/django_project/static/diseases.csv",
+    "/Users/aliyildiz/Documents/development/django/Django-AQI-Diseases-Map/django_project/static/diseases.csv",
     header=6,
     on_bad_lines="skip",
     sep=";",
@@ -31,7 +31,7 @@ def home(request):
     year = int(request.GET.get("year", 2019))
 
     dataRaw = pd.read_csv(
-        "/Users/aliyildiz/Documents/development/django/graduationProject/django_project/static/data.csv",
+        "/Users/aliyildiz/Documents/development/django/Django-AQI-Diseases-Map/django_project/static/data.csv",
         header=0,
         sep=",",
     )
@@ -184,7 +184,7 @@ def home(request):
 
     return render(
         request,
-        "/Users/aliyildiz/Documents/development/django/graduationProject/django_project/templates/index.html",
+        "/Users/aliyildiz/Documents/development/django/Django-AQI-Diseases-Map/django_project/templates/index.html",
         {"country_data": country_data},
     )
 
